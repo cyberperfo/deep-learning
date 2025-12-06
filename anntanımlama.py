@@ -82,4 +82,24 @@ plt.title("Training Loss over Epochs")
 plt.legend()
 plt.show()
 #test
-
+def test_model(model, test_loader):
+    model.eval() #modeli değerlendirme moduna al
+    correct = 0 
+    total = 0
+    with torch.no_grad(): #gradyan hesaplamalarını devre dışı bırak
+        for images, labels in test_loader: #test veri seti üzerinde iterasyon yap
+            images, labels = images.to('cpu'), labels.to('cpu') #veriyi cpu ya taşı
+            predictions = model(images) #modelden çıktı al
+            _, predicted = torch.max(predictions.data, 1) #en yüksek olasılıklı sınıfı al
+            total += labels.size(0) #toplam örnek sayısını güncelle
+            correct += (predicted == labels).sum().item() #doğru tahmin sayısını güncelle
+    print("Accuracy of the model on the test images: {} %".format(100 * correct / total))
+test_model(model, test_loader)        
+#main
+if __name__ == "__main__":
+    train_loader, test_loader = get_data_loaders()#veri yükleyicileri al
+    visualize_samples(train_loader, 5)
+    model = Neuralnetwork().to('cpu')
+    criterion, optimizer = define_loss_and_optimizer(model)
+    train_model(model, train_loader, num_epochs=5)
+    test_model(model, test_loader)
