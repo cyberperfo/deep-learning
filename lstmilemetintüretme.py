@@ -52,20 +52,19 @@ print("Hiperparametre Tuning Başlıyor...")
 for emb_size, hidden_size, lr in product(embedding_sizes, hidden_sizes, learning_rates):#grid search product:kombinasyon oluşturma fonskiyonu
     print(f'Deniyor: Embedding Dim={emb_size}, Hidden Dim={hidden_size}, Learning Rate={lr}')
     #model tanımla
-    model=LSTMModel(vocab_size=len(vocab), embedding_dim=emb_size, hidden_dim=hidden_size)
+    model=LSTMModel(vocab_size=len(vocab),embedding_dim=emb_size,hidden_dim=hidden_size)
     loss_function =nn.CrossEntropyLoss()
     optimizer=optim.Adam(model.parameters(),lr=lr)
     epochs=50
     total_loss=0
     #model eğitme
     for epoch in range(epochs):
-        hidden = None
         epoch_loss=0#epoch kaybı başlangıçta sıfır
         for word, next_word in data:#input=word ve target=next word kelimeler
             model.zero_grad()
             input_seq=prepare_sequence([word],word_to_ix)#girdiyi tensöre çevir
             target_seq=prepare_sequence([next_word],word_to_ix)#hedefi tensöre çevir
-            prediction=model(input_seq,hidden)#output
+            prediction=model(input_seq)#output
             loss=loss_function(prediction,target_seq)
             loss.backward()
             optimizer.step()
@@ -78,3 +77,38 @@ for emb_size, hidden_size, lr in product(embedding_sizes, hidden_sizes, learning
         best_loss=total_loss
         best_params={'embedding_dim':emb_size,'hidden_dim':hidden_size,'learning_rate':lr}
 print("En İyi Hiperparametreler:", best_params)        
+#lstm training 
+final_model=LSTMModel(vocab_size=len(vocab),embedding_dim=best_params['embedding_dim'],hidden_dim=best_params['hidden_dim'])
+loss_function=nn.CrossEntropyLoss()
+optimizer=optim.Adam(final_model.parameters(),lr=best_params['learning_rate'])
+print("Final Model Eğitimi Başlıyor...")
+for epoch in range(100):
+    epoch_loss=0
+    for word, next_word in data:
+        final_model.zero_grad()
+        input_seq=prepare_sequence([word],word_to_ix)#girdi tensöre çevirme
+        target_seq=prepare_sequence([next_word],word_to_ix)#hedef tensöre çevirme
+        prediction=final_model(input_seq)
+        loss=loss_function(prediction,target_seq)
+        loss.backward()
+        optimizer.step()
+        epoch_loss += loss.item()
+    if epoch % 10 == 0:
+        print(f'Epoch {epoch+1}/100, Loss: {epoch_loss/len(data):.4f}')
+#test ve evolototion 
+def preditch_sequence(start_word,num_words):
+    current_word=start_word#şu anki kelime başlangıç kelimesi
+    output_seqence=[current_word] #çıktı dizisi
+    for _ in range(num_words):
+        with torch.no_grad():#gradyan hesaplamalarını devre dışı bırak
+            input_seq=prepare_sequence([current_word],word_to_ix)#girdi tensöre çevirme
+            prediction=final_model(input_seq)#modelden çıktı al
+            predicted_index=torch.argmax(prediction,dim=1).item()#en yüksek olasılıklı indeksi al
+            predicted_word=ix_to_word[predicted_index]#indeksi kelimeye dönüştür
+            output_seqence.append(predicted_word)#çıktı dizisine ekle
+            current_word=predicted_word#şu anki kelimeyi güncelle         
+    return  output_seqence #tahmin edilnen kelime sayısı retrun edilir
+start_word='ürün' #başlangıç kelimesi
+num_words=10 #tahmin edilecek kelime sayısı
+predicted_sequence=preditch_sequence(start_word,num_words) 
+print("Tahmin Edilen Kelime Dizisi:", ' '.join(predicted_sequence))      
