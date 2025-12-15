@@ -35,4 +35,21 @@ class RBFN(nn.Module):
         return out  
 model=RBFN(input_size=4,num_centers=10,output_size=3)        
 # model training
-# model testi ve görselleştirme 
+criterion=nn.CrossEntropyLoss()
+optimizer=optim.Adam(model.parameters(),lr=0.01)
+num_epochs=100
+for epoch in range(num_epochs):
+    model.train()
+    optimizer.zero_grad()
+    outputs=model(X_train)
+    loss=criterion(outputs,y_train)
+    loss.backward()
+    optimizer.step()#ağırlıkları güncelle
+    if (epoch+1)%10==0:
+        print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}')
+# model testi ve değerlendirme
+with torch.no_grad():
+    y_pred=model(X_test)#test verisi ile tahmin et 
+    accuary=(y_pred.argmax(dim=1)==y_test).float().mean()#doğruluk hesapla
+    print(f'Accuracy: {accuary.item()*100:.2f}%')
+

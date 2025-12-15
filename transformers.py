@@ -16,8 +16,7 @@ def preprocess_text(text):
 #veri seti oluşturma
 data=positive_comments+negative_comments
 labels=[1]*len(positive_comments)+[0]*len(negative_comments)#1:pozitif,0:negatif 
-data=[preprocess_text(comment) for comment in data]#veri ön işleme
-all_words=" ".join(data).split()#tüm kelimeleri birleştir ve böl    
+data=[preprocess_text(comment) for comment in data]#veri ön işleme    
 #vocab oluşturma(kelime dağarcığı)
 all_words=" ".join(data).split()#tüm kelimeleri birleştir ve böl
 world_counts=Counter(all_words)#kelime frekansını hesapla

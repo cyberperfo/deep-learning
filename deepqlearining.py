@@ -114,23 +114,23 @@ num_episodes=500
 for i_episode in range(num_episodes):
     state,info=env.reset()
     state=torch.tensor([state],device=device,dtype=torch.float32)
-    for t in count():
+    for t in count():#ajanın her adımı için sonuç döngüsü
         action=select_action(state)
-        next_state,reward,terminated,truncated,info=env.step(action.item())
-        reward=torch.tensor([reward],device=device,dtype=torch.float32)
-        done=terminated or truncated
-        if terminated:
+        next_state,reward,terminated,truncated,info=env.step(action.item())#çevreden action a göre yeni durum ve ödül al
+        reward=torch.tensor([reward],device=device,dtype=torch.float32)#ödülü tensöre çevir
+        done=terminated or truncated#oyunun bitip bitmediğini kontrol et
+        if terminated:#durum sonlandıysa next_state i None yap
             next_state=None        
-        else:
+        else:#durum devam ediyorsa next_state i tensöre çevir
             next_state=torch.tensor([next_state],device=device,dtype=torch.float32,device=device).unsqueeze(0)
         memoru.push(state,action,next_state,reward)#geçişi replay memory e ekle
         state=next_state
         optimize_model()#modeli optimize et
-        target_net_state_dict=target_net.state_dict()
-        policy_net_state_dict=policy_net.state_dict()
+        target_net_state_dict=target_net.state_dict()#hedef ağın ağırlıklarını al
+        policy_net_state_dict=policy_net.state_dict()#politik ağın ağırlıklarını al
     #hedef ağı yumuşak güncelleme
     for key in policy_net_state_dict:
-        target_net_state_dict[key]=tau*policy_net_state_dict[key]*tau+(1-tau)*target_net_state_dict[key]*(1-tau)
+        target_net_state_dict[key]=tau*policy_net_state_dict[key]*tau+(1-tau)*target_net_state_dict[key]*(1-tau)#ağırlıkları güncelle
         if done:
             episode_durations.append(t+1)
             plot_durations()
